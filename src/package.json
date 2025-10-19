@@ -1,5 +1,29 @@
 {
+  "name": "nist_match_1",
+  "version": "1.0.0",
+  "description": "Dating app with React frontend and Express/MongoDB backend",
+  "type": "module",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "concurrently \"npm run dev-server\" \"npm run dev-client\"",
+    "dev-server": "nodemon server/server.js",
+    "dev-client": "cd src && npm run dev",
+    "build": "cd src && npm run build",
+    "postinstall": "cd src && npm install"
+  },
+  "keywords": [],
+  "author": "Your Name",
+  "license": "ISC",
   "dependencies": {
-    "my-project": "file:.."
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mongoose": "^8.19.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.10"
   }
 }
+
