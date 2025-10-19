@@ -31,7 +31,7 @@ export default function App() {
             <>
               <Header />
               <HeroSection />
-              <Aboutsection />
+              <AboutSection />
               <ProjectsSection />
               <ContactSection />
             </>
