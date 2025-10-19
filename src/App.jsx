@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Header from "./components/Header.jsx";
 import HeroSection from "./components/HeroSection.jsx";
-import Aboutsection from "./components/Aboutsection.jsx";
+import AboutSection from "./components/AboutSection.jsx";
 import ProjectsSection from "./components/ProjectsSection.jsx";
 import ContactSection from "./components/ContactSection.jsx";
 import BlankPage from "./components/BlankPage.jsx";
