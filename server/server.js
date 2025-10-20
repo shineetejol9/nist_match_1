@@ -50,15 +50,18 @@ const User = mongoose.model("User", userSchema);
 
 // Routes
 app.post("/api/saveProfile", async (req, res) => {
+  console.log("Incoming data:", req.body); // <-- debug log
   try {
     const newUser = new User(req.body);
-    await newUser.save();
-    res.status(201).json({ message: "Profile saved!", user: newUser });
+    const saved = await newUser.save();
+    console.log("Saved user:", saved); // <-- debug log
+    res.status(201).json({ message: "Profile saved!", user: saved });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error. Please try again." });
   }
 });
+
 
 app.get("/api/users", async (req, res) => {
   try {
