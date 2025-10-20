@@ -235,7 +235,7 @@ const ProjectsSection = () => {
                     className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300"
                     onClick={() => window.location.href = "/blank"}
                 >
-                    Click Me
+                    Click Me 
                 </motion.button>
             </div>
         </section>
