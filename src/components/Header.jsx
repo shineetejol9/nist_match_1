@@ -1,26 +1,17 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { FiGithub, FiTwitter, FiLinkedin, FiMenu, FiX } from "react-icons/fi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const toggleMenu = () => setIsOpen(!isOpen);
-
-  // Contact form state
+  const [savedProfile, setSavedProfile] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [contactFormOpen, setContactFormOpen] = useState(false);
+  const [profilePic, setProfilePic] = useState(null);
+
+  const toggleMenu = () => setIsOpen(!isOpen);
   const openContactForm = () => setContactFormOpen(true);
   const closeContactForm = () => setContactFormOpen(false);
-
-  // Profile picture state
-  const [profilePic, setProfilePic] = useState(null);
-  const handleProfilePicUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setProfilePic(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -44,27 +35,53 @@ const Header = () => {
     relationshipType: "",
   });
 
-  // Handle form input changes
+  // Prefill form if editing
+  useEffect(() => {
+    if (isEditing && savedProfile) {
+      setFormData({ ...savedProfile });
+      setProfilePic(savedProfile.profilePic);
+      openContactForm();
+    }
+  }, [isEditing, savedProfile]);
+
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle form submission
+  // Profile picture upload
+  const handleProfilePicUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setProfilePic(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Submit profile
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await fetch("http://localhost:5000/api/saveProfile", {
-        method: "POST",
+        method: savedProfile ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, profilePic }),
       });
       const data = await response.json();
-      console.log("Saved:", data);
-      alert("Profile saved successfully!");
-      setContactFormOpen(false);
+
+      if (response.ok) {
+        alert(savedProfile ? "Profile updated!" : "Profile saved!");
+        setSavedProfile(data.user);
+        setContactFormOpen(false);
+        setIsEditing(false);
+      } else {
+        alert("Error: " + data.error);
+      }
     } catch (err) {
-      console.error("Error saving profile:", err);
+      console.error(err);
+      alert("Server error. Try again later.");
     }
   };
 
@@ -75,13 +92,7 @@ const Header = () => {
         <motion.div
           initial={{ opacity: 0, x: -100 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{
-            type: "spring",
-            stiffness: 100,
-            damping: 25,
-            delay: 0.3,
-            duration: 1.2,
-          }}
+          transition={{ type: "spring", stiffness: 100, damping: 25, delay: 0.3, duration: 1.2 }}
           className="flex items-center"
         >
           <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-gray-500 to-gray-100 flex items-center justify-center text-purple-600 font-bold text-xl mr-3">
@@ -99,12 +110,7 @@ const Header = () => {
               key={item}
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 100,
-                damping: 20,
-                delay: 0.7 + index * 0.2,
-              }}
+              transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.7 + index * 0.2 }}
               className="relative text-gray-200 hover:text-violet-400 font-medium transition-colors duration-300 group"
               href="#"
             >
@@ -130,19 +136,39 @@ const Header = () => {
           ))}
 
           <motion.button
-            onClick={openContactForm}
+            onClick={() => {
+              if (!savedProfile) {
+                // Not logged in, redirect to Google login
+                window.location.href = "http://localhost:5000/auth/google";
+              } else {
+                // Logged in, open profile modal
+                setIsEditing(true);
+                openContactForm();
+              }
+            }}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{
-              delay: 1.6,
-              duration: 0.8,
-              type: "spring",
-              stiffness: 100,
-              damping: 15,
-            }}
+            transition={{ delay: 1.6, duration: 0.8 }}
             className="ml-4 px-4 py-2 rounded-xl bg-gradient-to-r from-gray-400 to-gray-100 text-violet-700 font-bold hover:from-violet-700 hover:to-purple-700 hover:text-white transition-all duration-500"
           >
-            Create your profile
+            Sign in with Google
+          </motion.button>
+
+
+
+
+          <motion.button
+            onClick={() => {
+              setIsEditing(!!savedProfile);
+              openContactForm();
+              if (savedProfile) setProfilePic(savedProfile.profilePic);
+            }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1.6, duration: 0.8 }}
+            className="ml-4 px-4 py-2 rounded-xl bg-gradient-to-r from-gray-400 to-gray-100 text-violet-700 font-bold hover:from-violet-700 hover:to-purple-700 hover:text-white transition-all duration-500"
+          >
+            {savedProfile ? "See Your Profile" : "Create Your Profile"}
           </motion.button>
         </div>
 
@@ -154,7 +180,7 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Contact Form */}
+      {/* Contact Form Modal */}
       <AnimatePresence>
         {contactFormOpen && (
           <motion.div
@@ -168,12 +194,7 @@ const Header = () => {
               initial={{ scale: 0.8, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: 30 }}
-              transition={{
-                type: "spring",
-                damping: 30,
-                stiffness: 200,
-                duration: 0.8,
-              }}
+              transition={{ type: "spring", damping: 30, stiffness: 200, duration: 0.8 }}
               className="bg-gray-900 text-gray-300 w-full h-full overflow-y-auto p-6 sm:p-10 rounded-none"
             >
               <div className="flex justify-between items-center mb-4">
@@ -183,7 +204,7 @@ const Header = () => {
                 </button>
               </div>
 
-              {/* Profile Picture Upload */}
+              {/* Profile Picture */}
               <div className="flex flex-col items-center mb-8">
                 <div className="relative">
                   <img
@@ -196,28 +217,11 @@ const Header = () => {
                     className="absolute bottom-0 right-0 bg-violet-600 text-white p-2 rounded-full cursor-pointer hover:bg-violet-700 transition flex items-center justify-center"
                     style={{ transform: "translate(20%, 20%)" }}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 11c.828 0 1.5.672 1.5 1.5S12.828 14 12 14s-1.5-.672-1.5-1.5S11.172 11 12 11zM4 7h3l1-2h8l1 2h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z"
-                      />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c.828 0 1.5.672 1.5 1.5S12.828 14 12 14s-1.5-.672-1.5-1.5S11.172 11 12 11zM4 7h3l1-2h8l1 2h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z" />
                     </svg>
                   </label>
-                  <input
-                    id="profilePic"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleProfilePicUpload}
-                  />
+                  <input id="profilePic" type="file" accept="image/*" className="hidden" onChange={handleProfilePicUpload} />
                 </div>
                 <p className="text-sm text-gray-400 mt-2">Upload your profile picture</p>
               </div>
@@ -228,9 +232,7 @@ const Header = () => {
                   .filter((key) => key !== "relationshipType")
                   .map((key) => (
                     <div key={key}>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">
-                        {key}
-                      </label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">{key}</label>
                       <input
                         type="text"
                         name={key}
