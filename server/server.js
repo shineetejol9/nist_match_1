@@ -189,14 +189,14 @@ app.get("/", (req, res) => {
 // ====== Serve frontend in production ======
 // Serve frontend in production
 if (isProduction) {
-  const frontendPath = path.join(process.cwd(), "client/dist");
-  app.use(express.static(frontendPath));
+  app.use(express.static(path.join(process.cwd(), "client/dist")));
 
-  // Safe fallback route
-  app.get("/*", (req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
+  // Catch-all route for frontend routing
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(process.cwd(), "client/dist", "index.html"));
   });
 }
+
 
 
 // ====== Start Server ======
