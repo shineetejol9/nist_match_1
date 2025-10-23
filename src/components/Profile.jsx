@@ -2,6 +2,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Dynamically use backend URL depending on environment
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
@@ -13,13 +17,12 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Fetch logged-in user
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/me", {
+        const res = await fetch(`${API_URL}/api/me`, {
           method: "GET",
-          credentials: "include", // send cookies/session
+          credentials: "include",
         });
 
         if (!res.ok) throw new Error("Unauthorized");
@@ -35,22 +38,20 @@ const Profile = () => {
       } catch (err) {
         console.error(err);
         setError(err.message);
-        navigate("/login"); // redirect if not logged in
+        navigate("/login");
       }
     };
 
     fetchUser();
   }, [navigate]);
 
-  // Handle input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Save updated profile
   const handleSave = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/saveProfile", {
+      const res = await fetch(`${API_URL}/api/saveProfile`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -60,8 +61,7 @@ const Profile = () => {
       if (!res.ok) throw new Error("Failed to save profile");
 
       const data = await res.json();
-      console.log("Profile updated:", data);
-      setUser(data.user); // update state with latest info
+      setUser(data.user);
       alert("Profile saved successfully!");
     } catch (err) {
       console.error(err);
@@ -82,7 +82,6 @@ const Profile = () => {
       />
       <p className="text-sm mb-2">Email: {user.email}</p>
 
-      {/* Editable Profile Form */}
       <div className="space-y-3 mt-4">
         <input
           type="text"
