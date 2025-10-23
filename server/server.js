@@ -9,10 +9,10 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import bodyParser from "body-parser";
 import MongoStore from "connect-mongo";
 
-// Determine environment
+// ===== Determine Environment =====
 const isProduction = process.env.NODE_ENV === "production";
 
-// Load environment variables
+// ===== Load Environment Variables =====
 dotenv.config({
   path: isProduction ? "./.env" : "./nist.env",
 });
@@ -22,10 +22,12 @@ const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = isProduction
   ? process.env.VITE_API_URL
   : "http://localhost:5173";
+const BACKEND_URL = isProduction
+  ? "https://nist-match-1.onrender.com"
+  : "http://localhost:5000";
 
-// ====== Middleware ======
+// ===== Middleware =====
 app.use(bodyParser.json());
-
 app.use(
   cors({
     origin: FRONTEND_URL,
@@ -33,18 +35,16 @@ app.use(
   })
 );
 
-// ====== MongoDB Connection ======
+// ===== MongoDB Connection =====
 mongoose
   .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     maxPoolSize: 10,
     serverSelectionTimeoutMS: 5000,
   })
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ====== Session ======
+// ===== Session =====
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "supersecret123",
@@ -63,7 +63,7 @@ app.use(
   })
 );
 
-// ====== User Model ======
+// ===== User Schema =====
 const userSchema = new mongoose.Schema(
   {
     googleId: String,
@@ -92,7 +92,7 @@ const userSchema = new mongoose.Schema(
 
 const User = mongoose.model("User", userSchema);
 
-// ====== Passport Setup ======
+// ===== Passport Setup =====
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -101,7 +101,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${FRONTEND_URL}/auth/google/callback`,
+      callbackURL: `${BACKEND_URL}/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -132,10 +132,13 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-// ====== Routes ======
+// ===== Routes =====
 
 // Google OAuth
-app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+app.get(
+  "/auth/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
 
 app.get(
   "/auth/google/callback",
@@ -186,21 +189,16 @@ app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
 
-// ====== Serve frontend in production ======
-// Serve frontend in production
-// ====== Serve frontend in production ======
+// ===== Serve Frontend in Production =====
 if (isProduction) {
   const clientDist = path.join(process.cwd(), "client/dist");
   app.use(express.static(clientDist));
 
-  // Catch-all route for SPA (React/Vite)
-  app.get(/.*/, (req, res) => {
+  // Catch-all route for React SPA
+  app.get("*", (req, res) => {
     res.sendFile(path.join(clientDist, "index.html"));
   });
 }
 
-
-
-
-// ====== Start Server ======
+// ===== Start Server =====
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
