@@ -187,12 +187,17 @@ app.get("/", (req, res) => {
 });
 
 // ====== Serve frontend in production ======
+// Serve frontend in production
 if (isProduction) {
-  app.use(express.static(path.join(process.cwd(), "client/dist")));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(process.cwd(), "client/dist", "index.html"));
+  const frontendPath = path.join(process.cwd(), "client/dist");
+  app.use(express.static(frontendPath));
+
+  // Safe fallback route
+  app.get("/*", (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
   });
 }
+
 
 // ====== Start Server ======
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
