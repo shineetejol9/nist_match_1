@@ -5,46 +5,97 @@ import { useState, useEffect } from "react";
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [savedProfile, setSavedProfile] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [contactFormOpen, setContactFormOpen] = useState(false);
   const [profilePic, setProfilePic] = useState(null);
+
+  const defaultForm = {
+    "Enter your Anonymous Name": "",
+    "Which batch are you from": "",
+    "Enter your gender": "",
+    "Enter your branch": "",
+    "Enter your hobbies": "",
+    "What makes you unique": "",
+    "What kind of partner do you like": "",
+    "Enter your height": "",
+    "Enter your weight": "",
+    "Enter your Skin Tone": "",
+    "Do you have any pets": "",
+    "Enter which languages": "",
+    "What is your zodiacSign": "",
+    "Enter your habits": "",
+    "Relationship Type": "",
+  };
+
+  // Load from localStorage
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem("formData");
+    return saved ? JSON.parse(saved) : defaultForm;
+  });
+
+  // Save to localStorage every change
+  useEffect(() => {
+    localStorage.setItem("formData", JSON.stringify(formData));
+  }, [formData]);
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const openContactForm = () => setContactFormOpen(true);
   const closeContactForm = () => setContactFormOpen(false);
 
-  // Form data state
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    age: "",
-    gender: "",
-    location: "",
-    occupation: "",
-    hobbies: "",
-    uniqueness: "",
-    myType: "",
-    height: "",
-    weight: "",
-    figureSkinColor: "",
-    education: "",
-    pets: "",
-    languages: "",
-    zodiacSign: "",
-    habits: "",
-    relationshipType: "",
-  });
-
-  // Prefill form if editing
+  // Fetch logged-in user
   useEffect(() => {
-    if (isEditing && savedProfile) {
-      setFormData({ ...savedProfile });
-      setProfilePic(savedProfile.profilePic);
-      openContactForm();
-    }
-  }, [isEditing, savedProfile]);
+const fetchUser = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/me", {
+      method: "GET",
+      credentials: "include"
+    });
 
-  // Handle input changes
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log("User fetched:", data);
+    setSavedProfile(data); // ← important
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("loggedIn")) {
+      fetchUser();
+      window.history.replaceState({}, document.title, "/");
+    } else {
+      fetchUser();
+    }
+  }, []);
+
+  // Prefill form if user data exists
+  useEffect(() => {
+    if (savedProfile) {
+      setFormData((prev) => ({
+        ...prev,
+        "Enter your Anonymous Name": savedProfile.name || prev["Enter your Anonymous Name"],
+        "Which batch are you from": savedProfile.batch || prev["Which batch are you from"],
+        "Enter your gender": savedProfile.gender || prev["Enter your gender"],
+        "Enter your branch": savedProfile.branch || prev["Enter your branch"],
+        "Enter your hobbies": savedProfile.hobbies || prev["Enter your hobbies"],
+        "What makes you unique": savedProfile.uniqueness || prev["What makes you unique"],
+        "What kind of partner do you like": savedProfile.myType || prev["What kind of partner do you like"],
+        "Enter your height": savedProfile.height || prev["Enter your height"],
+        "Enter your weight": savedProfile.weight || prev["Enter your weight"],
+        "Enter your Skin Tone": savedProfile.skinTone || prev["Enter your Skin Tone"],
+        "Do you have any pets": savedProfile.pets || prev["Do you have any pets"],
+        "Enter which languages": savedProfile.languages || prev["Enter which languages"],
+        "What is your zodiacSign": savedProfile.zodiacSign || prev["What is your zodiacSign"],
+        "Enter your habits": savedProfile.habits || prev["Enter your habits"],
+        "Relationship Type": savedProfile.relationshipType || prev["Relationship Type"],
+      }));
+    }
+  }, [savedProfile]);
+
+  // Handle text & radio changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -60,29 +111,57 @@ const Header = () => {
     }
   };
 
-  // Submit profile
+  // Handle save
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await fetch("http://localhost:5000/api/saveProfile", {
-        method: savedProfile ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, profilePic }),
-      });
-      const data = await response.json();
+    if (!savedProfile?._id) return alert("User not logged in");
 
-      if (response.ok) {
-        alert(savedProfile ? "Profile updated!" : "Profile saved!");
+    // Map to backend format
+    const payload = {
+      _id: savedProfile._id,
+      name: formData["Enter your Anonymous Name"],
+      batch: formData["Which batch are you from"],
+      gender: formData["Enter your gender"],
+      branch: formData["Enter your branch"],
+      hobbies: formData["Enter your hobbies"],
+      uniqueness: formData["What makes you unique"],
+      myType: formData["What kind of partner do you like"],
+      height: formData["Enter your height"],
+      weight: formData["Enter your weight"],
+      skinTone: formData["Enter your Skin Tone"],
+      pets: formData["Do you have any pets"],
+      languages: formData["Enter which languages"],
+      zodiacSign: formData["What is your zodiacSign"],
+      habits: formData["Enter your habits"],
+      relationshipType: formData["Relationship Type"],
+      profilePic,
+    };
+
+    try {
+      const res = await fetch("http://localhost:5000/api/saveProfile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Profile saved!");
         setSavedProfile(data.user);
+        localStorage.setItem("formData", JSON.stringify(formData));
         setContactFormOpen(false);
-        setIsEditing(false);
       } else {
-        alert("Error: " + data.error);
+        alert(data.error || "Error saving profile");
       }
     } catch (err) {
       console.error(err);
-      alert("Server error. Try again later.");
+      alert("Server error");
     }
+  };
+
+  const handleOpenProfile = () => {
+    openContactForm();
+    if (savedProfile) setProfilePic(savedProfile.profilePic);
   };
 
   return (
@@ -103,7 +182,7 @@ const Header = () => {
           </span>
         </motion.div>
 
-        {/* Desktop nav */}
+        {/* Desktop Nav */}
         <nav className="lg:flex hidden space-x-8">
           {["Home", "About", "Matches", "Profile", "Contact"].map((item, index) => (
             <motion.a
@@ -120,7 +199,7 @@ const Header = () => {
           ))}
         </nav>
 
-        {/* Socials + button */}
+        {/* Socials + Buttons */}
         <div className="md:flex hidden items-center space-x-4">
           {[FiGithub, FiTwitter, FiLinkedin].map((Icon, i) => (
             <motion.a
@@ -135,15 +214,13 @@ const Header = () => {
             </motion.a>
           ))}
 
+          {/* Google Sign-In / Logout */}
           <motion.button
             onClick={() => {
               if (!savedProfile) {
-                // Not logged in, redirect to Google login
                 window.location.href = "http://localhost:5000/auth/google";
               } else {
-                // Logged in, open profile modal
-                setIsEditing(true);
-                openContactForm();
+                window.location.href = "http://localhost:5000/api/logout";
               }
             }}
             initial={{ opacity: 0, scale: 0.8 }}
@@ -151,18 +228,12 @@ const Header = () => {
             transition={{ delay: 1.6, duration: 0.8 }}
             className="ml-4 px-4 py-2 rounded-xl bg-gradient-to-r from-gray-400 to-gray-100 text-violet-700 font-bold hover:from-violet-700 hover:to-purple-700 hover:text-white transition-all duration-500"
           >
-            Sign in with Google
+            {savedProfile ? `Signed in as ${savedProfile.name}` : "Sign in with Google"}
           </motion.button>
 
-
-
-
+          {/* Open Profile */}
           <motion.button
-            onClick={() => {
-              setIsEditing(!!savedProfile);
-              openContactForm();
-              if (savedProfile) setProfilePic(savedProfile.profilePic);
-            }}
+            onClick={handleOpenProfile}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.6, duration: 0.8 }}
@@ -172,7 +243,7 @@ const Header = () => {
           </motion.button>
         </div>
 
-        {/* Mobile menu button */}
+        {/* Mobile Menu */}
         <div className="md:hidden flex items-center">
           <motion.button whileTap={{ scale: 0.7 }} onClick={toggleMenu} className="text-gray-300">
             {isOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
@@ -209,7 +280,7 @@ const Header = () => {
                 <div className="relative">
                   <img
                     src={profilePic || "https://via.placeholder.com/120"}
-                    alt=""
+                    alt="Profile"
                     className="w-28 h-28 rounded-full object-cover border-4 border-violet-600 shadow-lg"
                   />
                   <label
@@ -217,8 +288,19 @@ const Header = () => {
                     className="absolute bottom-0 right-0 bg-violet-600 text-white p-2 rounded-full cursor-pointer hover:bg-violet-700 transition flex items-center justify-center"
                     style={{ transform: "translate(20%, 20%)" }}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c.828 0 1.5.672 1.5 1.5S12.828 14 12 14s-1.5-.672-1.5-1.5S11.172 11 12 11zM4 7h3l1-2h8l1 2h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 11c.828 0 1.5.672 1.5 1.5S12.828 14 12 14s-1.5-.672-1.5-1.5S11.172 11 12 11zM4 7h3l1-2h8l1 2h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z"
+                      />
                     </svg>
                   </label>
                   <input id="profilePic" type="file" accept="image/*" className="hidden" onChange={handleProfilePicUpload} />
@@ -228,9 +310,9 @@ const Header = () => {
 
               {/* Form */}
               <form className="space-y-4" onSubmit={handleSubmit}>
-                {Object.keys(formData)
-                  .filter((key) => key !== "relationshipType")
-                  .map((key) => (
+                {Object.keys(formData).map((key) => {
+                  if (["Enter your gender", "Which batch are you from", "Relationship Type"].includes(key)) return null;
+                  return (
                     <div key={key}>
                       <label className="block text-sm font-medium text-gray-300 mb-1">{key}</label>
                       <input
@@ -242,21 +324,60 @@ const Header = () => {
                         className="w-full px-4 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-gray-700 text-gray-200 placeholder-gray-400"
                       />
                     </div>
-                  ))}
+                  );
+                })}
+
+                {/* Gender */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Enter your gender</label>
+                  <div className="flex flex-wrap gap-4">
+                    {["Male", "Female", "Other"].map((gender) => (
+                      <label key={gender} className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          name="Enter your gender"
+                          value={gender}
+                          checked={formData["Enter your gender"] === gender}
+                          onChange={handleChange}
+                          className="accent-violet-500"
+                        />
+                        <span>{gender}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Batch */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Which batch are you from</label>
+                  <div className="flex flex-wrap gap-4">
+                    {["1st Year", "2nd Year", "3rd Year", "4th Year"].map((batch) => (
+                      <label key={batch} className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          name="Which batch are you from"
+                          value={batch}
+                          checked={formData["Which batch are you from"] === batch}
+                          onChange={handleChange}
+                          className="accent-violet-500"
+                        />
+                        <span>{batch}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Relationship Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Kind of relationship I am looking for
-                  </label>
-                  <div className="flex flex-col sm:flex-row sm:space-x-6 space-y-2 sm:space-y-0 text-gray-300">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Kind of relationship I am looking for</label>
+                  <div className="flex flex-wrap gap-4">
                     {["Casual", "Serious", "Friendship"].map((type) => (
                       <label key={type} className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          name="relationshipType"
-                          value={type.toLowerCase()}
-                          checked={formData.relationshipType === type.toLowerCase()}
+                          name="Relationship Type"
+                          value={type}
+                          checked={formData["Relationship Type"] === type}
                           onChange={handleChange}
                           className="accent-violet-500"
                         />
@@ -266,6 +387,7 @@ const Header = () => {
                   </div>
                 </div>
 
+                {/* Submit */}
                 <motion.button
                   type="submit"
                   whileHover={{ scale: 1.03 }}

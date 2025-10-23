@@ -10,6 +10,7 @@ import ProjectsSection from "./components/ProjectsSection.jsx";
 import ContactSection from "./components/ContactSection.jsx";
 import BlankPage from "./components/BlankPage.jsx";
 import CustomCursor from "./components/CustomCursor.jsx";
+import Profile from "./components/Profile";
 
 export default function App() {
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function App() {
 
         {/* Blank page route */}
         <Route path="/blank" element={<BlankPage />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
   );

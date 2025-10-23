@@ -1,89 +1,77 @@
-import React from 'react'
-import { useRef, useEffect } from "react";
+// src/components/CustomCursor.jsx
+import React, { useRef, useEffect } from "react";
 import { gsap } from "gsap";
 
 const CustomCursor = () => {
-    //refs for cursor elements
-    const cursorRef = useRef(null);
-    const cursorBorderRef = useRef(null);
+  const cursorRef = useRef(null);
+  const cursorBorderRef = useRef(null);
 
-    // hide cursor on mobile
-    const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches
+  // Hide cursor on mobile devices
+  const isMobile =
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 768px)").matches;
 
+  if (isMobile) return null;
 
-    if (isMobile) {
-        return null
-    }
+  useEffect(() => {
+    const cursor = cursorRef.current;
+    const cursorBorder = cursorBorderRef.current;
 
-    useEffect(() => {
-        // get cursor elements
-        const cursor = cursorRef.current;
-        const cursorBorder = cursorBorderRef.current;
+    // Initial position off-screen
+    gsap.set([cursor, cursorBorder], {
+      xPercent: -50,
+      yPercent: -50,
+    });
 
-        // initial position off-screen
-        gsap.set([cursor, cursorBorder], {
-            xPercent: -50,
-            yPercent: -50,
-        })
+    // Quick setters for smooth cursor movement
+    const xTo = gsap.quickTo(cursor, "x", { duration: 0.2, ease: "power3.out" });
+    const yTo = gsap.quickTo(cursor, "y", { duration: 0.2, ease: "power3.out" });
+    const xToBorder = gsap.quickTo(cursorBorder, "x", { duration: 0.5, ease: "power3.out" });
+    const yToBorder = gsap.quickTo(cursorBorder, "y", { duration: 0.5, ease: "power3.out" });
 
-        // variables for cursor position with different speeds
-        const xTo = gsap.quickTo(cursor, "x", {
-            duration: 0.2, ease: "power3.out"
-        })
-        const yTo = gsap.quickTo(cursor, "y", {
-            duration: 0.2, ease: "power3.out"
-        })
+    // Mouse move handler
+    const handleMouseMove = (e) => {
+      xTo(e.clientX);
+      yTo(e.clientY);
+      xToBorder(e.clientX);
+      yToBorder(e.clientY);
+    };
 
-        const xToBorder = gsap.quickTo(cursorBorder, "x", {
-            duration: 0.5, ease: "power3.out"
-        })
-        const yToBorder = gsap.quickTo(cursorBorder, "y", {
-            duration: 0.5, ease: "power3.out"
-        })
+    window.addEventListener("mousemove", handleMouseMove);
 
-        // mouse move handler
-        const handlemouseMove = (e) => {
-            xTo(e.clientX)
-            yTo(e.clientY)
-            xToBorder(e.clientX)
-            yToBorder(e.clientY)
-        }
+    // Click animations
+    const handleMouseDown = () => {
+      gsap.to([cursor, cursorBorder], { scale: 0.6, duration: 0.2 });
+    };
+    const handleMouseUp = () => {
+      gsap.to([cursor, cursorBorder], { scale: 1, duration: 0.2 });
+    };
 
-        //  add mouse move listener
-        window.addEventListener("mousemove", handlemouseMove);
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("mouseup", handleMouseUp);
 
-        // add click animation
-        document.addEventListener("mousedown", () => {
-            gsap.to([cursor, cursorBorder], {
-                scale: 0.6,
-                duration: 0.2,
-            })
-        })
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
 
-        document.addEventListener("mouseup", () => {
-            gsap.to([cursor, cursorBorder], {
-                scale:1,
-                duration: 0.2,
-            })
-        })
+  return (
+    <>
+      {/* Main cursor dot */}
+      <div
+        ref={cursorRef}
+        className="fixed top-0 left-0 w-[20px] h-[20px] bg-white rounded-full pointer-events-none z-[999] mix-blend-difference"
+      />
+      {/* Cursor border */}
+      <div
+        ref={cursorBorderRef}
+        className="fixed top-0 left-0 w-[40px] h-[40px] border rounded-full border-white pointer-events-none z-[999] mix-blend-difference opacity-50"
+      />
+    </>
+  );
+};
 
-    },[])
-
-    return (
-        <>
-            {/* main cursor dot */}
-            <div
-                ref={cursorRef}
-                className="fixed top-0 left-0 w-[20px] h-[20px] bg-white rounded-full pointer-events-none z-[999] mix-blend-difference"
-            />
-
-            <div
-                ref={cursorBorderRef}
-                className="fixed top-0 left-0 w-[40px] h-[40px] border rounded-full border-white pointer-events-none z-[999] mix-blend-difference opacity-50"
-            />
-        </>
-    )
-}
-
-
-export default CustomCursor
+export default CustomCursor;

@@ -5,14 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "nodemon server/server.js",
+    "dev-all": "concurrently \"node --max-old-space-size=4096 node_modules/vite/bin/vite.js\" \"npm run server\"",
     "build": "vite build",
-    "lint": "eslint .",
     "preview": "vite preview",
-    "dev-all": "concurrently \"npm run dev\" \"nodemon server/server.js\""
+    "lint": "eslint ."
   },
   "dependencies": {
     "@splinetool/react-spline": "^4.1.0",
     "@tailwindcss/vite": "^4.1.14",
+    "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
