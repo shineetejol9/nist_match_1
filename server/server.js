@@ -11,19 +11,21 @@ import MongoStore from "connect-mongo";
 
 // Load environment variables
 dotenv.config({
-  path: path.resolve("C:/Users/Shinee sohan/Github/nist_match_1/nist.env"),
+  path: path.resolve(process.env.NODE_ENV === "production" ? "./.env" : "./nist.env"),
 });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const FRONTEND_URL = process.env.NODE_ENV === "production"
+  ? process.env.VITE_API_URL
+  : "http://localhost:5173";
 
 // ====== Middleware ======
 app.use(bodyParser.json());
 
-// Allow frontend cookies for auth persistence
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: FRONTEND_URL,
     credentials: true,
   })
 );
@@ -31,8 +33,6 @@ app.use(
 // ====== MongoDB Connection ======
 mongoose
   .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     maxPoolSize: 10,
     serverSelectionTimeoutMS: 5000,
   })
@@ -49,7 +49,7 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
-      ttl: 14 * 24 * 60 * 60, // 14 days
+      ttl: 14 * 24 * 60 * 60,
     }),
     cookie: {
       secure: isProduction,
@@ -98,7 +98,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:5000/auth/google/callback",
+      callbackURL: `${FRONTEND_URL}/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -130,33 +130,26 @@ passport.deserializeUser(async (id, done) => {
 });
 
 // ====== Routes ======
-
-// Start Google Auth
 app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
-// Handle Google callback
 app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => {
     const user = req.user;
     if (!user.age || !user.gender || !user.occupation || !user.relationshipType) {
-      res.redirect(`http://localhost:5173/create-profile?_id=${user._id}`);
+      res.redirect(`${FRONTEND_URL}/create-profile?_id=${user._id}`);
     } else {
-      res.redirect("http://localhost:5173/?loggedIn=true");
+      res.redirect(`${FRONTEND_URL}/?loggedIn=true`);
     }
   }
 );
 
-// Return logged-in user data
 app.get("/api/me", (req, res) => {
-  if (req.isAuthenticated()) {
-    return res.json(req.user);
-  }
+  if (req.isAuthenticated()) return res.json(req.user);
   res.status(401).json({ error: "Not authenticated" });
 });
 
-// Save / update user profile
 app.post("/api/saveProfile", async (req, res) => {
   const { _id } = req.body;
   if (!_id) return res.status(400).json({ error: "_id required" });
@@ -170,16 +163,28 @@ app.post("/api/saveProfile", async (req, res) => {
   }
 });
 
-// Logout route
 app.get("/api/logout", (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
     req.session.destroy(() => {
       res.clearCookie("connect.sid");
-      res.redirect("http://localhost:5173");
+      res.redirect(FRONTEND_URL);
     });
   });
 });
+
+// ====== Root Route ======
+app.get("/", (req, res) => {
+  res.send("Backend is running!");
+});
+
+// ====== Serve Frontend in Production ======
+if (isProduction) {
+  app.use(express.static(path.join(process.cwd(), "client/dist")));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(process.cwd(), "client/dist", "index.html"));
+  });
+}
 
 // ====== Start Server ======
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
