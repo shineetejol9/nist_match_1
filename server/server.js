@@ -9,14 +9,17 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import bodyParser from "body-parser";
 import MongoStore from "connect-mongo";
 
+// Determine environment
+const isProduction = process.env.NODE_ENV === "production";
+
 // Load environment variables
 dotenv.config({
-  path: path.resolve(process.env.NODE_ENV === "production" ? "./.env" : "./nist.env"),
+  path: isProduction ? "./.env" : "./nist.env",
 });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = process.env.NODE_ENV === "production"
+const FRONTEND_URL = isProduction
   ? process.env.VITE_API_URL
   : "http://localhost:5173";
 
@@ -33,6 +36,8 @@ app.use(
 // ====== MongoDB Connection ======
 mongoose
   .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
     maxPoolSize: 10,
     serverSelectionTimeoutMS: 5000,
   })
@@ -40,16 +45,14 @@ mongoose
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // ====== Session ======
-const isProduction = process.env.NODE_ENV === "production";
-
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "secret_key_here",
+    secret: process.env.SESSION_SECRET || "supersecret123",
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
-      ttl: 14 * 24 * 60 * 60,
+      ttl: 14 * 24 * 60 * 60, // 14 days
     }),
     cookie: {
       secure: isProduction,
@@ -130,6 +133,8 @@ passport.deserializeUser(async (id, done) => {
 });
 
 // ====== Routes ======
+
+// Google OAuth
 app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
 app.get(
@@ -145,11 +150,13 @@ app.get(
   }
 );
 
+// Get logged-in user
 app.get("/api/me", (req, res) => {
   if (req.isAuthenticated()) return res.json(req.user);
   res.status(401).json({ error: "Not authenticated" });
 });
 
+// Save/update profile
 app.post("/api/saveProfile", async (req, res) => {
   const { _id } = req.body;
   if (!_id) return res.status(400).json({ error: "_id required" });
@@ -163,6 +170,7 @@ app.post("/api/saveProfile", async (req, res) => {
   }
 });
 
+// Logout
 app.get("/api/logout", (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
@@ -173,12 +181,12 @@ app.get("/api/logout", (req, res, next) => {
   });
 });
 
-// ====== Root Route ======
+// Root
 app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
 
-// ====== Serve Frontend in Production ======
+// ====== Serve frontend in production ======
 if (isProduction) {
   app.use(express.static(path.join(process.cwd(), "client/dist")));
   app.get("*", (req, res) => {
