@@ -188,14 +188,17 @@ app.get("/", (req, res) => {
 
 // ====== Serve frontend in production ======
 // Serve frontend in production
+// ====== Serve frontend in production ======
 if (isProduction) {
-  app.use(express.static(path.join(process.cwd(), "client/dist")));
+  const clientDist = path.join(process.cwd(), "client/dist");
+  app.use(express.static(clientDist));
 
-  // Catch-all route for frontend routing
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(process.cwd(), "client/dist", "index.html"));
+  // Catch-all route for SPA (React/Vite)
+  app.get(/.*/, (req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
   });
 }
+
 
 
 
