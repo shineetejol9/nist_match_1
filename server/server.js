@@ -189,16 +189,5 @@ app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
 
-// ===== Serve Frontend in Production =====
-if (isProduction) {
-  const clientDist = path.join(process.cwd(), "client/dist");
-  app.use(express.static(clientDist));
-
-  // ✅ FIXED: Use app.use() for catch-all instead of app.get("*")
-  app.use((req, res) => {
-    res.sendFile(path.join(clientDist, "index.html"));
-  });
-}
-
 // ===== Start Server =====
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
