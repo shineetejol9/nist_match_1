@@ -45,10 +45,11 @@ const Header = () => {
   useEffect(() => {
 const fetchUser = async () => {
   try {
-    const res = await fetch("http://localhost:5000/api/me", {
-      method: "GET",
-      credentials: "include"
-    });
+   const res = await fetch("https://nist-match-1.onrender.com/api/me", {
+  method: "GET",
+  credentials: "include",
+});
+
 
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
@@ -138,7 +139,7 @@ const fetchUser = async () => {
     };
 
     try {
-      const res = await fetch("http://localhost:5000/api/saveProfile", {
+      const res = await fetch("https://nist-match-1.onrender.com/api/saveProfile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -218,9 +219,9 @@ const fetchUser = async () => {
           <motion.button
             onClick={() => {
               if (!savedProfile) {
-                window.location.href = "http://localhost:5000/auth/google";
+                window.location.href = "https://nist-match-1.onrender.com/auth/google";
               } else {
-                window.location.href = "http://localhost:5000/api/logout";
+                window.location.href = "https://nist-match-1.onrender.com/api/logout";
               }
             }}
             initial={{ opacity: 0, scale: 0.8 }}
