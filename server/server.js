@@ -194,8 +194,8 @@ if (isProduction) {
   const clientDist = path.join(process.cwd(), "client/dist");
   app.use(express.static(clientDist));
 
-  // Catch-all route for React SPA
-  app.get("*", (req, res) => {
+  // ✅ FIXED: Use app.use() for catch-all instead of app.get("*")
+  app.use((req, res) => {
     res.sendFile(path.join(clientDist, "index.html"));
   });
 }
