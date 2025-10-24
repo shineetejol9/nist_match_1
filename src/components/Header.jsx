@@ -43,25 +43,25 @@ const Header = () => {
 
   // Fetch logged-in user
   useEffect(() => {
-const fetchUser = async () => {
-  try {
-   const res = await fetch("https://nist-match-1.onrender.com/api/me", {
-  method: "GET",
-  credentials: "include",
-});
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("https://nist-match-1.onrender.com/api/me", {
+          method: "GET",
+          credentials: "include",
+        });
 
 
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
 
-    const data = await res.json();
-    console.log("User fetched:", data);
-    setSavedProfile(data); // ← important
-  } catch (err) {
-    console.error(err);
-  }
-};
+        const data = await res.json();
+        console.log("User fetched:", data);
+        setSavedProfile(data); // ← important
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("loggedIn")) {
@@ -218,10 +218,14 @@ const fetchUser = async () => {
           {/* Google Sign-In / Logout */}
           <motion.button
             onClick={() => {
+              const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
               if (!savedProfile) {
-                window.location.href = "https://nist-match-1.onrender.com/auth/google";
+                // Sign in
+                window.location.href = `${BACKEND_URL}/auth/google`;
               } else {
-                window.location.href = "https://nist-match-1.onrender.com/api/logout";
+                // Sign out
+                window.location.href = `${BACKEND_URL}/api/logout`;
               }
             }}
             initial={{ opacity: 0, scale: 0.8 }}
