@@ -218,8 +218,9 @@ const Header = () => {
           {/* Google Sign-In / Logout */}
           <motion.button
             onClick={() => {
-              const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
+              // Correct
+              const BACKEND_URL = import.meta.env.VITE_API_URL;
+              window.location.href = `${BACKEND_URL}/auth/google`;
               if (!savedProfile) {
                 // Sign in
                 window.location.href = `${BACKEND_URL}/auth/google`;
