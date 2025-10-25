@@ -65,7 +65,6 @@ app.use(
       secure: isProduction, // HTTPS only in prod
       httpOnly: true,
       sameSite: isProduction ? "none" : "lax",
-      domain: isProduction ? ".nist-match.vercel.app" : "localhost",
       maxAge: 14 * 24 * 60 * 60 * 1000,
     },
   })
