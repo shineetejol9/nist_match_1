@@ -41,23 +41,19 @@ const Header = () => {
   const openContactForm = () => setContactFormOpen(true);
   const closeContactForm = () => setContactFormOpen(false);
 
+  const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
   // Fetch logged-in user
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch("https://nist-match-1.onrender.com/api/me", {
+        const res = await fetch(`${BACKEND_URL}/api/me`, {
           method: "GET",
           credentials: "include",
         });
-
-
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
-        console.log("User fetched:", data);
-        setSavedProfile(data); // ← important
+        setSavedProfile(data);
       } catch (err) {
         console.error(err);
       }
@@ -70,7 +66,7 @@ const Header = () => {
     } else {
       fetchUser();
     }
-  }, []);
+   }, [BACKEND_URL]);
 
   // Prefill form if user data exists
   useEffect(() => {
@@ -117,7 +113,6 @@ const Header = () => {
     e.preventDefault();
     if (!savedProfile?._id) return alert("User not logged in");
 
-    // Map to backend format
     const payload = {
       _id: savedProfile._id,
       name: formData["Enter your Anonymous Name"],
@@ -139,7 +134,7 @@ const Header = () => {
     };
 
     try {
-      const res = await fetch("https://nist-match-1.onrender.com/api/saveProfile", {
+      const res = await fetch(`${BACKEND_URL}/api/saveProfile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -217,15 +212,10 @@ const Header = () => {
 
           {/* Google Sign-In / Logout */}
           <motion.button
-            onClick={() => {
-              // Correct
-              const BACKEND_URL = import.meta.env.VITE_API_URL;
-              window.location.href = `${BACKEND_URL}/auth/google`;
+            o onClick={() => {
               if (!savedProfile) {
-                // Sign in
                 window.location.href = `${BACKEND_URL}/auth/google`;
               } else {
-                // Sign out
                 window.location.href = `${BACKEND_URL}/api/logout`;
               }
             }}
