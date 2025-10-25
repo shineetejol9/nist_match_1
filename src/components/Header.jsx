@@ -26,13 +26,11 @@ const Header = () => {
     "Relationship Type": "",
   };
 
-  // Load from localStorage
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("formData");
     return saved ? JSON.parse(saved) : defaultForm;
   });
 
-  // Save to localStorage every change
   useEffect(() => {
     localStorage.setItem("formData", JSON.stringify(formData));
   }, [formData]);
@@ -43,7 +41,6 @@ const Header = () => {
 
   const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // Fetch logged-in user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -68,7 +65,6 @@ const Header = () => {
     }
   }, [BACKEND_URL]);
 
-  // Prefill form if user data exists
   useEffect(() => {
     if (savedProfile) {
       setFormData((prev) => ({
@@ -92,13 +88,11 @@ const Header = () => {
     }
   }, [savedProfile]);
 
-  // Handle text & radio changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Profile picture upload
   const handleProfilePicUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -108,7 +102,6 @@ const Header = () => {
     }
   };
 
-  // Handle save
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!savedProfile?._id) return alert("User not logged in");
@@ -214,9 +207,9 @@ const Header = () => {
           <motion.button
             onClick={() => {
               if (!savedProfile) {
-                window.location.href = `${API_URL}/auth/google`; // Use API_URL
+                window.location.href = `${BACKEND_URL}/auth/google`;
               } else {
-                window.location.href = `${API_URL}/api/logout`;
+                window.location.href = `${BACKEND_URL}/api/logout`;
               }
             }}
             initial={{ opacity: 0, scale: 0.8 }}
@@ -271,7 +264,7 @@ const Header = () => {
                 </button>
               </div>
 
-              {/* Profile Picture */}
+              {/* Profile Picture Upload */}
               <div className="flex flex-col items-center mb-8">
                 <div className="relative">
                   <img
@@ -306,9 +299,12 @@ const Header = () => {
 
               {/* Form */}
               <form className="space-y-4" onSubmit={handleSubmit}>
-                {Object.keys(formData).map((key) => {
-                  if (["Enter your gender", "Which batch are you from", "Relationship Type"].includes(key)) return null;
-                  return (
+                {Object.keys(formData)
+                  .filter(
+                    (key) =>
+                      !["Enter your gender", "Which batch are you from", "Relationship Type"].includes(key)
+                  )
+                  .map((key) => (
                     <div key={key}>
                       <label className="block text-sm font-medium text-gray-300 mb-1">{key}</label>
                       <input
@@ -320,8 +316,7 @@ const Header = () => {
                         className="w-full px-4 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-gray-700 text-gray-200 placeholder-gray-400"
                       />
                     </div>
-                  );
-                })}
+                  ))}
 
                 {/* Gender */}
                 <div>
@@ -365,7 +360,9 @@ const Header = () => {
 
                 {/* Relationship Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Kind of relationship I am looking for</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Kind of relationship I am looking for
+                  </label>
                   <div className="flex flex-wrap gap-4">
                     {["Casual", "Serious", "Friendship"].map((type) => (
                       <label key={type} className="flex items-center space-x-2">
