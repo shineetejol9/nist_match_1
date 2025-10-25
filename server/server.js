@@ -7,19 +7,18 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import bodyParser from "body-parser";
 import MongoStore from "connect-mongo";
+import User from "./models/User.js"; // Make sure your User model is in ./models/User.js
 
-// ===== Determine Environment =====
+// ===== Environment =====
 const isProduction = process.env.NODE_ENV === "production";
 
-// ===== Load Environment Variables =====
 dotenv.config({
-  path: isProduction ? "./.env" : "./nist.env", // Use local .env for dev
+  path: isProduction ? "./.env" : "./nist.env",
 });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Frontend URLs
 const FRONTEND_URL = isProduction
   ? process.env.FRONTEND_URL_PROD
   : process.env.FRONTEND_URL;
@@ -30,9 +29,13 @@ const BACKEND_URL = isProduction
 
 // ===== Middleware =====
 app.use(bodyParser.json());
+
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: [
+      "https://nist-match.vercel.app",
+      "http://localhost:5173",
+    ],
     credentials: true,
   })
 );
@@ -47,6 +50,8 @@ mongoose
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // ===== Session =====
+app.set("trust proxy", 1);
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "supersecret123",
@@ -54,45 +59,18 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
-      ttl: 14 * 24 * 60 * 60, // 14 days
+      ttl: 14 * 24 * 60 * 60,
     }),
     cookie: {
       secure: isProduction, // HTTPS only in prod
       httpOnly: true,
       sameSite: isProduction ? "none" : "lax",
+      domain: isProduction ? ".nist-match.vercel.app" : "localhost",
       maxAge: 14 * 24 * 60 * 60 * 1000,
     },
   })
 );
 
-// ===== User Schema =====
-const userSchema = new mongoose.Schema(
-  {
-    googleId: String,
-    name: String,
-    email: String,
-    age: String,
-    gender: String,
-    location: String,
-    occupation: String,
-    hobbies: String,
-    uniqueness: String,
-    myType: String,
-    height: String,
-    weight: String,
-    skinTone: String,
-    education: String,
-    pets: String,
-    languages: String,
-    zodiacSign: String,
-    habits: String,
-    relationshipType: String,
-    profilePic: String,
-  },
-  { timestamps: true }
-);
-
-const User = mongoose.model("User", userSchema);
 
 // ===== Passport Setup =====
 app.use(passport.initialize());
@@ -147,12 +125,9 @@ app.get(
   passport.authenticate("google", { failureRedirect: FRONTEND_URL }),
   (req, res) => {
     const user = req.user;
-    // Redirect to profile creation if required fields are missing
     if (!user.age || !user.gender || !user.occupation || !user.relationshipType) {
-      // User hasn’t completed profile, send them to create-profile page
       res.redirect(`${FRONTEND_URL}/create-profile?_id=${user._id}`);
     } else {
-      // User has profile, send them to homepage
       res.redirect(`${FRONTEND_URL}/?loggedIn=true`);
     }
   }
@@ -164,13 +139,39 @@ app.get("/api/me", (req, res) => {
   res.status(401).json({ error: "Not authenticated" });
 });
 
+// Allowed fields for profile updates
+const allowedFields = [
+  "age",
+  "gender",
+  "location",
+  "occupation",
+  "hobbies",
+  "uniqueness",
+  "myType",
+  "height",
+  "weight",
+  "skinTone",
+  "education",
+  "pets",
+  "languages",
+  "zodiacSign",
+  "habits",
+  "relationshipType",
+  "profilePic",
+];
+
 // Save/update profile
 app.post("/api/saveProfile", async (req, res) => {
-  const { _id } = req.body;
+  const { _id, ...rest } = req.body;
   if (!_id) return res.status(400).json({ error: "_id required" });
 
+  const updateData = {};
+  for (let key of allowedFields) {
+    if (rest[key] !== undefined) updateData[key] = rest[key];
+  }
+
   try {
-    const updatedUser = await User.findByIdAndUpdate(_id, req.body, { new: true });
+    const updatedUser = await User.findByIdAndUpdate(_id, updateData, { new: true });
     res.json({ message: "Profile saved!", user: updatedUser });
   } catch (err) {
     console.error("Save error:", err);
@@ -183,7 +184,7 @@ app.get("/api/logout", (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
     req.session.destroy(() => {
-      res.clearCookie("connect.sid");
+      res.clearCookie("connect.sid", { domain: isProduction ? ".nist-match.vercel.app" : undefined });
       res.redirect(FRONTEND_URL);
     });
   });
