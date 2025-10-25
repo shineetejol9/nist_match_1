@@ -2,7 +2,6 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-import path from "path";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
@@ -14,14 +13,18 @@ const isProduction = process.env.NODE_ENV === "production";
 
 // ===== Load Environment Variables =====
 dotenv.config({
-  path: isProduction ? "./.env" : "./nist.env",
+  path: isProduction ? "./.env" : "./nist.env", // Use local .env for dev
 });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Frontend URLs
 const FRONTEND_URL = isProduction
   ? process.env.VITE_API_URL
   : "http://localhost:5173";
+
+// Backend URL for Google OAuth
 const BACKEND_URL = isProduction
   ? "https://nist-match-1.onrender.com"
   : "http://localhost:5000";
@@ -55,7 +58,7 @@ app.use(
       ttl: 14 * 24 * 60 * 60, // 14 days
     }),
     cookie: {
-      secure: isProduction,
+      secure: isProduction, // HTTPS only in prod
       httpOnly: true,
       sameSite: isProduction ? "none" : "lax",
       maxAge: 14 * 24 * 60 * 60 * 1000,
@@ -78,7 +81,7 @@ const userSchema = new mongoose.Schema(
     myType: String,
     height: String,
     weight: String,
-    figureSkinColor: String,
+    skinTone: String,
     education: String,
     pets: String,
     languages: String,
@@ -110,13 +113,13 @@ passport.use(
           user = await User.create({
             googleId: profile.id,
             name: profile.displayName,
-            email: profile.emails[0].value,
+            email: profile.emails?.[0]?.value,
             profilePic: profile.photos?.[0]?.value,
           });
         }
-        return done(null, user);
+        done(null, user);
       } catch (err) {
-        return done(err, null);
+        done(err, null);
       }
     }
   )
@@ -142,9 +145,10 @@ app.get(
 
 app.get(
   "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/" }),
+  passport.authenticate("google", { failureRedirect: FRONTEND_URL }),
   (req, res) => {
     const user = req.user;
+    // Redirect to profile creation if required fields are missing
     if (!user.age || !user.gender || !user.occupation || !user.relationshipType) {
       res.redirect(`${FRONTEND_URL}/create-profile?_id=${user._id}`);
     } else {
