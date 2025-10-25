@@ -21,13 +21,12 @@ const PORT = process.env.PORT || 5000;
 
 // Frontend URLs
 const FRONTEND_URL = isProduction
-  ? process.env.VITE_API_URL
-  : "http://localhost:5173";
+  ? process.env.FRONTEND_URL_PROD
+  : process.env.FRONTEND_URL;
 
-// Backend URL for Google OAuth
 const BACKEND_URL = isProduction
-  ? "https://nist-match-1.onrender.com"
-  : "http://localhost:5000";
+  ? process.env.BACKEND_URL_PROD
+  : process.env.BACKEND_URL;
 
 // ===== Middleware =====
 app.use(bodyParser.json());
@@ -150,8 +149,10 @@ app.get(
     const user = req.user;
     // Redirect to profile creation if required fields are missing
     if (!user.age || !user.gender || !user.occupation || !user.relationshipType) {
+      // User hasn’t completed profile, send them to create-profile page
       res.redirect(`${FRONTEND_URL}/create-profile?_id=${user._id}`);
     } else {
+      // User has profile, send them to homepage
       res.redirect(`${FRONTEND_URL}/?loggedIn=true`);
     }
   }

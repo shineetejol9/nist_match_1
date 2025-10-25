@@ -66,7 +66,7 @@ const Header = () => {
     } else {
       fetchUser();
     }
-   }, [BACKEND_URL]);
+  }, [BACKEND_URL]);
 
   // Prefill form if user data exists
   useEffect(() => {
@@ -212,11 +212,11 @@ const Header = () => {
 
           {/* Google Sign-In / Logout */}
           <motion.button
-            o onClick={() => {
+            onClick={() => {
               if (!savedProfile) {
-                window.location.href = `${BACKEND_URL}/auth/google`;
+                window.location.href = `${API_URL}/auth/google`; // Use API_URL
               } else {
-                window.location.href = `${BACKEND_URL}/api/logout`;
+                window.location.href = `${API_URL}/api/logout`;
               }
             }}
             initial={{ opacity: 0, scale: 0.8 }}
