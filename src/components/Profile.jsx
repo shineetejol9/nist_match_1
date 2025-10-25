@@ -20,7 +20,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/me`, {
+        const res = await fetch("https://your-backend.com/api/me", {
           method: "GET",
           credentials: "include",
         });
