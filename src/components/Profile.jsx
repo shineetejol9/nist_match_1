@@ -17,6 +17,7 @@ const Profile = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("🔗 Using API_URL:", API_URL);
     const fetchUser = async () => {
       try {
         const res = await fetch(`${API_URL}/api/me`, {
