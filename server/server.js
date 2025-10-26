@@ -62,9 +62,9 @@ app.use(
       ttl: 14 * 24 * 60 * 60,
     }),
     cookie: {
-      secure: isProduction, // HTTPS only in prod
+      secure: true,
       httpOnly: true,
-      sameSite: isProduction ? "none" : "lax",
+      sameSite: "none",
       maxAge: 14 * 24 * 60 * 60 * 1000,
     },
   })
@@ -183,7 +183,12 @@ app.get("/api/logout", (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
     req.session.destroy(() => {
-      res.clearCookie("connect.sid", { domain: isProduction ? ".nist-match.vercel.app" : undefined });
+      res.clearCookie("connect.sid", {
+        path: "/",
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+      });
       res.redirect(FRONTEND_URL);
     });
   });

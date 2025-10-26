@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 // Dynamically use backend URL depending on environment
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
@@ -20,7 +19,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch("https://your-backend.com/api/me", {
+        const res = await fetch(`${API_URL}/api/me`, {
           method: "GET",
           credentials: "include",
         });
