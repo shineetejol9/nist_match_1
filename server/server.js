@@ -33,7 +33,7 @@ app.use(bodyParser.json());
 app.use(
   cors({
     origin: [
-      "https://nist-match-1.vercel.app/",
+      "https://nist-match-1.vercel.app",
       "http://localhost:5173",
     ],
     credentials: true,
