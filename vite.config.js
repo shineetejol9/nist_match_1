@@ -1,25 +1,33 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    tailwindcss(),
-    react()
-
-  ],
+  plugins: [tailwindcss(), react()],
   build: {
-    // Optional: increase warning limit if you have large chunks
-    chunkSizeWarningLimit: 2500, // in kB
+    chunkSizeWarningLimit: 2500,
     rollupOptions: {
       output: {
-        // Optional: manual chunking for large libraries
         manualChunks: {
-          react: ['react', 'react-dom'],
-          framer: ['framer-motion'],
+          react: ["react", "react-dom"],
+          framer: ["framer-motion"],
         },
       },
     },
   },
-})
+
+  // ✅ Important for local development & Vercel proxying
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+
+  // ✅ This makes Vercel serve from dist/
+  base: "./",
+});
