@@ -38,7 +38,7 @@ const Profile = () => {
       } catch (err) {
         console.error(err);
         setError(err.message);
-        window.location.href = `${API_URL}/auth/google`;
+        navigate(`/create-profile?_id=${user._id}`);
       }
     };
 
